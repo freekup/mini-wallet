@@ -1,9 +1,13 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/freekup/mini-wallet/internal/app/middleware"
 	uws "github.com/freekup/mini-wallet/internal/app/service/user_wallet"
 	wts "github.com/freekup/mini-wallet/internal/app/service/wallet_transaction"
+	"github.com/freekup/mini-wallet/pkg/cerror"
+	"github.com/freekup/mini-wallet/pkg/jsend"
 	"github.com/freekup/mini-wallet/pkg/tokenizer"
 	"github.com/labstack/echo/v4"
 	"github.com/typical-go/typical-rest-server/pkg/echokit"
@@ -45,19 +49,20 @@ func (c *UserWalletController) InitializeWallet(ec echo.Context) (err error) {
 		return
 	}
 
-	userWallet, err := c.UserWalletService.InitializeWallet(ctx, param.UserXID)
-	if err != nil {
-		return
+	userWallet, cerr := c.UserWalletService.InitializeWallet(ctx, param.UserXID)
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
 	token, err := tokenizer.GenerateJWTToken(ctx, userWallet.UserXID)
 	if err != nil {
-		return
+		cerr = cerror.NewSystemError(err.Error())
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
 		"token": token,
-	})
+	}))
 }
 
 // EnableWallet used to enable wallet status
@@ -67,18 +72,20 @@ func (c *UserWalletController) EnableWallet(ec echo.Context) (err error) {
 		xid = tokenizer.FetchEchoTokenXID(ec)
 	)
 
-	wallet, err := c.UserWalletService.EnableWallet(ctx, xid)
-	if err != nil {
-		return
+	wallet, cerr := c.UserWalletService.EnableWallet(ctx, xid)
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"id":         wallet.ID,
-		"owned_by":   wallet.UserXID,
-		"status":     wallet.IsEnabledString(),
-		"enabled_at": wallet.EnabledAt,
-		"balance":    wallet.CurrentBalance,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"wallet": map[string]interface{}{
+			"id":         wallet.ID,
+			"owned_by":   wallet.UserXID,
+			"status":     wallet.IsEnabledString(),
+			"enabled_at": wallet.EnabledAt,
+			"balance":    wallet.CurrentBalance,
+		},
+	}))
 }
 
 // DisableWallet used to disable wallet status
@@ -93,18 +100,20 @@ func (c *UserWalletController) DisableWallet(ec echo.Context) (err error) {
 		isDisabled = true
 	}
 
-	wallet, err := c.UserWalletService.DisableWallet(ctx, isDisabled, xid)
-	if err != nil {
-		return
+	wallet, cerr := c.UserWalletService.DisableWallet(ctx, isDisabled, xid)
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"id":          wallet.ID,
-		"owned_by":    wallet.UserXID,
-		"status":      wallet.IsEnabledString(),
-		"disabled_at": wallet.DeletedAt,
-		"balance":     wallet.CurrentBalance,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"wallet": map[string]interface{}{
+			"id":          wallet.ID,
+			"owned_by":    wallet.UserXID,
+			"status":      wallet.IsEnabledString(),
+			"disabled_at": wallet.DeletedAt,
+			"balance":     wallet.CurrentBalance,
+		},
+	}))
 }
 
 // ViewMyWallet used to get wallet from auth
@@ -114,16 +123,18 @@ func (c *UserWalletController) ViewMyWallet(ec echo.Context) (err error) {
 		xid = tokenizer.FetchEchoTokenXID(ec)
 	)
 
-	wallet, err := c.UserWalletService.GetUserWalletByUserXID(ctx, xid)
-	if err != nil {
-		return
+	wallet, cerr := c.UserWalletService.GetUserWalletByUserXID(ctx, xid)
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"id":         wallet.ID,
-		"owned_by":   wallet.UserXID,
-		"status":     wallet.IsEnabledString(),
-		"enabled_at": wallet.EnabledAt,
-		"balance":    wallet.CurrentBalance,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"wallet": map[string]interface{}{
+			"id":         wallet.ID,
+			"owned_by":   wallet.UserXID,
+			"status":     wallet.IsEnabledString(),
+			"enabled_at": wallet.EnabledAt,
+			"balance":    wallet.CurrentBalance,
+		},
+	}))
 }

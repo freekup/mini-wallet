@@ -3,12 +3,12 @@ package userwallet
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/freekup/mini-wallet/internal/app/entity"
 	ur "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user"
 	uwr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user_wallet"
+	"github.com/freekup/mini-wallet/pkg/cerror"
 	"go.uber.org/dig"
 )
 
@@ -26,9 +26,19 @@ func NewUserWalletService(impl UserWalletServiceImpl) UserWalletService {
 }
 
 // InitializeWallet used to create new wallet for user
-func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string) (wallet entity.UserWallet, err error) {
+func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string) (wallet entity.UserWallet, cerr cerror.CError) {
+	var (
+		err error
+	)
+
+	defer func() {
+		if err != nil {
+			cerr = cerror.NewSystemError(err.Error())
+		}
+	}()
+
 	if xid == "" {
-		err = errors.New("user xid is empty")
+		cerr = cerror.NewValidationError("user_xid=user xid is empty")
 		return
 	}
 
@@ -37,7 +47,7 @@ func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string
 		return
 	}
 	if user.ID == 0 {
-		err = errors.New("user not found")
+		cerr = cerror.NewValidationError("user=user not found")
 		return
 	}
 
@@ -58,9 +68,19 @@ func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string
 }
 
 // EnableWallet used to change wallet status from disable to enable
-func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string) (wallet entity.UserWallet, err error) {
+func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string) (wallet entity.UserWallet, cerr cerror.CError) {
+	var (
+		err error
+	)
+
+	defer func() {
+		if err != nil {
+			cerr = cerror.NewSystemError(err.Error())
+		}
+	}()
+
 	if userXID == "" {
-		err = errors.New("user xid is empty")
+		cerr = cerror.NewValidationError("xid=user xid is empty")
 		return
 	}
 
@@ -69,11 +89,11 @@ func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string
 		return
 	}
 	if wallet.ID == "" {
-		err = errors.New("wallet not found")
+		cerr = cerror.NewValidationError("wallet=wallet not found")
 		return
 	}
 	if wallet.IsEnabledBool() {
-		err = errors.New("wallet already enabled")
+		cerr = cerror.NewValidationError("wallet=wallet already enabled")
 		return
 	}
 
@@ -93,9 +113,19 @@ func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string
 }
 
 // DisableWallet used to disable user wallet status
-func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable bool, userXID string) (wallet entity.UserWallet, err error) {
+func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable bool, userXID string) (wallet entity.UserWallet, cerr cerror.CError) {
+	var (
+		err error
+	)
+
+	defer func() {
+		if err != nil {
+			cerr = cerror.NewSystemError(err.Error())
+		}
+	}()
+
 	if userXID == "" {
-		err = errors.New("user xid is empty")
+		cerr = cerror.NewValidationError("xid=user xid is empty")
 		return
 	}
 
@@ -105,15 +135,15 @@ func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable boo
 	}
 
 	if wallet.ID == "" {
-		err = errors.New("wallet not found")
+		cerr = cerror.NewValidationError("wallet=wallet not found")
 		return
 	}
 	if !isDisable {
-		err = errors.New("IsDisable is false")
+		cerr = cerror.NewValidationError("is_disable=is_disable is false")
 		return
 	}
 	if isDisable && !wallet.IsEnabledBool() {
-		err = errors.New("wallet already disabled")
+		cerr = cerror.NewValidationError("wallet=wallet already disabled")
 		return
 	}
 
@@ -133,9 +163,19 @@ func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable boo
 }
 
 // GetUserWalletByUserXID used to get user wallet
-func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, err error) {
+func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, cerr cerror.CError) {
+	var (
+		err error
+	)
+
+	defer func() {
+		if err != nil {
+			cerr = cerror.NewSystemError(err.Error())
+		}
+	}()
+
 	if userXID == "" {
-		err = errors.New("user xid is empty")
+		cerr = cerror.NewValidationError("xid=user xid is empty")
 		return
 	}
 
@@ -144,11 +184,11 @@ func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, user
 		return
 	}
 	if wallet.ID == "" {
-		err = errors.New("wallet not found")
+		cerr = cerror.NewValidationError("wallet=wallet not found")
 		return
 	}
 	if !wallet.IsEnabledBool() {
-		err = errors.New("wallet is disabled")
+		cerr = cerror.NewValidationError("wallet=wallet is disabled")
 		return
 	}
 

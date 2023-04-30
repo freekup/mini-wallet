@@ -1,7 +1,10 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/freekup/mini-wallet/internal/app/entity"
+	"github.com/freekup/mini-wallet/pkg/jsend"
 	"github.com/freekup/mini-wallet/pkg/tokenizer"
 	"github.com/labstack/echo/v4"
 )
@@ -18,15 +21,15 @@ func (c *UserWalletController) GetWalletTransactions(ec echo.Context) (err error
 		return
 	}
 
-	results, pag, err := c.WalletTransService.GetWalletTransactions(ctx, pagination, xid)
-	if err != nil {
-		return
+	results, pag, cerr := c.WalletTransService.GetWalletTransactions(ctx, pagination, xid)
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"data":       results,
-		"pagination": pag,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"transactions": results,
+		"pagination":   pag,
+	}))
 }
 
 // WalletDeposit used to handle deposit
@@ -44,23 +47,25 @@ func (c *UserWalletController) WalletDeposit(ec echo.Context) (err error) {
 		return
 	}
 
-	walletTrans, err := c.WalletTransService.AddBalanceWallet(ctx, entity.AddBalanceWalletArg{
+	walletTrans, cerr := c.WalletTransService.AddBalanceWallet(ctx, entity.AddBalanceWalletArg{
 		Amount:      param.Amount,
 		ReferenceID: param.ReferenceID,
 		Requestor:   xid,
 	})
-	if err != nil {
-		return
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"id":           walletTrans.ID,
-		"deposit_by":   walletTrans.CreatedBy,
-		"status":       walletTrans.Status,
-		"deposit_at":   walletTrans.CreatedAt,
-		"amount":       walletTrans.Amount,
-		"reference_id": walletTrans.ReferenceID,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"deposit": map[string]interface{}{
+			"id":           walletTrans.ID,
+			"deposit_by":   walletTrans.CreatedBy,
+			"status":       walletTrans.Status,
+			"deposit_at":   walletTrans.CreatedAt,
+			"amount":       walletTrans.Amount,
+			"reference_id": walletTrans.ReferenceID,
+		},
+	}))
 }
 
 // WalletWithdraw used to handle withdrawal
@@ -78,21 +83,23 @@ func (c *UserWalletController) WalletWithdraw(ec echo.Context) (err error) {
 		return
 	}
 
-	walletTrans, err := c.WalletTransService.WithdrawBalance(ctx, entity.WithdrawBalanceArg{
+	walletTrans, cerr := c.WalletTransService.WithdrawBalance(ctx, entity.WithdrawBalanceArg{
 		Amount:      -param.Amount,
 		ReferenceID: param.ReferenceID,
 		Requestor:   xid,
 	})
-	if err != nil {
-		return
+	if cerr != nil {
+		return ec.JSON(cerr.GetStatusCode(), jsend.GenerateResponseError(cerr))
 	}
 
-	return ec.JSON(200, map[string]interface{}{
-		"id":           walletTrans.ID,
-		"deposit_by":   walletTrans.CreatedBy,
-		"status":       walletTrans.Status,
-		"deposit_at":   walletTrans.CreatedAt,
-		"amount":       walletTrans.Amount,
-		"reference_id": walletTrans.ReferenceID,
-	})
+	return ec.JSON(http.StatusOK, jsend.GenerateResponseSuccess(map[string]interface{}{
+		"withdrawal": map[string]interface{}{
+			"id":           walletTrans.ID,
+			"deposit_by":   walletTrans.CreatedBy,
+			"status":       walletTrans.Status,
+			"deposit_at":   walletTrans.CreatedAt,
+			"amount":       walletTrans.Amount,
+			"reference_id": walletTrans.ReferenceID,
+		},
+	}))
 }
