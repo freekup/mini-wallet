@@ -82,3 +82,56 @@ func (r UserWalletRepositoryImpl) GetUserWalletByUserXID(ctx context.Context, is
 		sqkit.Eq{fmt.Sprintf("%s.%s", entity.UserWalletTableName, entity.UserWalletTable.UserXID): userXID},
 	}...)
 }
+
+// CreateUserWallet used to create new user wallet data
+func (r UserWalletRepositoryImpl) CreateUserWallet(ctx context.Context, arg entity.CreateUserWalletArg) (wallet entity.UserWallet, err error) {
+	// Initialize transaction session from context
+	txn, err := dbtxn.Use(ctx, r.DB)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err != nil && txn != nil {
+			// Will automatic rollback if any error
+			txn.AppendError(err)
+		}
+	}()
+
+	builder := sq.Insert(entity.UserWalletTableName).Columns(
+		entity.UserWalletTable.ID,
+		entity.UserWalletTable.UserXID,
+		entity.UserWalletTable.CurrentBalance,
+		entity.UserWalletTable.IsEnabled,
+	).Values(
+		sq.Expr("gen_random_uuid()"),
+		arg.UserXID,
+		0,
+		0,
+	).Suffix(fmt.Sprintf("RETURNING %s, %s, %s, %s",
+		entity.UserWalletTable.ID,
+		entity.UserWalletTable.UserXID,
+		entity.UserWalletTable.CurrentBalance,
+		entity.UserWalletTable.IsEnabled,
+	)).PlaceholderFormat(sq.Dollar)
+
+	rows, err := builder.RunWith(txn).QueryContext(ctx)
+	if err != nil {
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		if err = rows.Scan(
+			&wallet.ID,
+			&wallet.UserXID,
+			&wallet.CurrentBalance,
+			&wallet.IsEnabled,
+		); err != nil {
+			return
+		}
+	}
+
+	return
+}

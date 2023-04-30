@@ -10,6 +10,10 @@ type (
 		DeletedBy      *string `json:"deleted_by"`
 		DeletedAt      *string `json:"deleted_at"`
 	}
+
+	CreateUserWalletArg struct {
+		UserXID string
+	}
 )
 
 func (v UserWallet) StringIsEnabled() string {
