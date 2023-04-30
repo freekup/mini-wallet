@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/freekup/mini-wallet/internal/app/entity"
@@ -131,6 +132,37 @@ func (r UserWalletRepositoryImpl) CreateUserWallet(ctx context.Context, arg enti
 		); err != nil {
 			return
 		}
+	}
+
+	return
+}
+
+// ChaneEnableStatusWallet used to change status from user wallet
+func (r *UserWalletRepositoryImpl) ChangeEnableStatusWallet(ctx context.Context, wallet entity.UserWallet) (err error) {
+	// Initialize transaction session from context
+	txn, err := dbtxn.Use(ctx, r.DB)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err != nil && txn != nil {
+			// Will automatic rollback if any error
+			txn.AppendError(err)
+		}
+	}()
+
+	builder := sq.Update(entity.UserWalletTableName).
+		Set(entity.UserWalletTable.IsEnabled, wallet.IsEnabled).
+		Set(entity.UserWalletTable.EnabledAt, wallet.EnabledAt).
+		Set(entity.UserWalletTable.ModifiedAt, time.Now().Format(time.RFC3339)).
+		Set(entity.UserWalletTable.DeletedAt, wallet.DeletedAt).
+		Set(entity.UserWalletTable.DeletedBy, wallet.DeletedBy).
+		Where(sq.Eq{entity.UserWalletTable.ID: wallet.ID}).PlaceholderFormat(sq.Dollar)
+
+	_, err = builder.RunWith(txn).ExecContext(ctx)
+	if err != nil {
+		return
 	}
 
 	return

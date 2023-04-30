@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/freekup/mini-wallet/internal/app/entity"
 	ur "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user"
@@ -51,6 +52,41 @@ func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string
 		if err != nil {
 			return
 		}
+	}
+
+	return
+}
+
+// EnableWallet used to change wallet status from disable to enable
+func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string) (wallet entity.UserWallet, err error) {
+	if userXID == "" {
+		err = errors.New("user xid is empty")
+		return
+	}
+
+	wallet, err = s.UserWalletRepo.GetUserWalletByUserXID(ctx, false, userXID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+	if wallet.ID == "" {
+		err = errors.New("wallet not found")
+		return
+	}
+	if wallet.IsEnabledBool() {
+		err = errors.New("wallet already enabled")
+		return
+	}
+
+	currTime := time.Now().Format(time.RFC3339)
+
+	wallet.IsEnabled = 1
+	wallet.EnabledAt = &currTime
+	wallet.DeletedAt = nil
+	wallet.DeletedBy = nil
+
+	err = s.UserWalletRepo.ChangeEnableStatusWallet(ctx, wallet)
+	if err != nil {
+		return
 	}
 
 	return

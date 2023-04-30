@@ -16,10 +16,14 @@ type (
 	}
 )
 
-func (v UserWallet) StringIsEnabled() string {
+func (v UserWallet) IsEnabledString() string {
 	if v.IsEnabled == 1 {
 		return "enabled"
 	} else {
 		return "disabled"
 	}
+}
+
+func (v UserWallet) IsEnabledBool() bool {
+	return v.IsEnabled == 1
 }
