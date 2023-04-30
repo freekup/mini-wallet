@@ -1,237 +1,55 @@
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-![Go-Workflow](https://github.com/typical-go/typical-rest-server/workflows/Go/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/typical-go/typical-rest-server)](https://goreportcard.com/report/github.com/typical-go/typical-rest-server)
-[![codebeat badge](https://codebeat.co/badges/17e19d4b-6803-4bbb-82bb-e39fe2f1424b)](https://codebeat.co/projects/github-com-typical-go-typical-rest-server-master)
-[![codecov](https://codecov.io/gh/typical-go/typical-rest-server/branch/master/graph/badge.svg)](https://codecov.io/gh/typical-go/typical-rest-server)
+# Mini Wallet
 
-# typical-rest-server
+## Dependencies
+- [typicalw](https://github.com/typical-go/typical-go)
+- [uber-dig](https://github.com/uber-go/dig) (for Dependency Injection)
+- PostgreSQL
+- [golang-migrate](https://github.com/golang-migrate/migrate)
+- Redis
+- Kafka
+- JWT
 
-> The project status is `WIP` (Work in progress) which means the author continously evaluate and improve the project.
+## Installation
 
-Pragmatic Golang RESTful Server Implementation. The project using [typical-go](https://github.com/typical-go/typical-go) as its build-tool.
-
-- Application
-  - [x] [Go-Standards](https://github.com/golang-standards/project-layout) Project Layout
-  - [x] Environment Variable Configuration
-  - [x] Health-Check and Debug API
-  - [x] Graceful Shutdown
-- Layered architecture
-  - [x] [SOLID Principle](https://en.wikipedia.org/wiki/SOLID)
-  - [x] Dependency Injection (using `@ctor` annotation)
-  - [x] ORMHate
-  - [x] Database Transaction
-- HTTP Server
-  - [x] [Echo framework](https://echo.labstack.com/)
-  - [x] Server Side Caching
-    - [x] Cache but revalidate (Header `Cache-Control: no-cache`)
-    - [x] Set Expiration Time (Header `Cache-Control: max-age=120`)
-    - [x] Return 304 if not modified (Header `If-Modified-Since: Sat, 31 Oct 2020 10:28:02 GMT`)
-  - [x] Request ID in logger (Header `X-Request-Id: xxx`)
-- RESTful
-  - [x] Create Resource (`POST` verb)
-  - [x] Update Resource (`PUT` verb)
-  - [x] Partially Update Resource (`PATCH` verb)
-  - [x] Find Resource (`GET` verb)
-    - [x] Offset Pagination (Query param `?limit=100&offset=0`)
-    - [x] Sorting (Query param `?sort=-title,created_at`)
-    - [x] Total count (Header `X-Total-Count: 99`)
-  - [x] Check resource (`HEAD` verb)
-  - [x] Delete resource (`DELETE` verb, idempotent)
-- Testing
-  - [x] Table Driven Test
-  - [x] Mocking (using `@mock` annotation)
-- Others
-  - [x] Database migration and seed tool
-  - [x] Generate code, `.env` file and `USAGE.md` according the configuration (using `@envconfig` annotation)
-  - [ ] Generate code for repository layer
-  - [x] Releaser
-
-
-## Run/Test Project
-
-Copy `.env.sample` for working configuration
+1. If you don't have golang migrate, you can install first using this command
 ```bash
-cp .env.sample .env    # copy the working .env
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
-
-Setup the local environment
+2. You can start with this command
 ```bash
-./typicalw docker up -d  # equivalent with `docker-compose up -d`
-
-# wait few seconds to make sure docker ready
-./typicalw setup         # setup dependency e.g. mysql and postgres
+go mod tidy
 ```
-
-Generate code by annotation (if any change required)
+3. To up migration you can use this command
 ```bash
-./typicalw generate
+make migration-up CONNECTION="postgresql://username:password@host:port/db-name"
 ```
-
-Build + Run application:
+4. Don't forget to change `.env.example` file to be `.env`
+5. After change `.env` value you can generate new DI and Env Config using this command
 ```bash
-./typicalw run         # run the application
+./typicalw g
 ```
-
-Test application:
+6. To start the program, you can easily run with this command
 ```bash
-./typicalw test        # run test
+./typicalw r
 ```
 
-Project descriptor at [tools/typical-build/typical-build.go](tools/typical-build/typical-build.go)
-```go
-var descriptor = typgo.Descriptor{
-  ProjectName:    "typical-rest-server",
-  ProjectVersion: "0.9.7",
+## Overview Process
+### Get Existing Wallet Amount
+This process using cache (Redis) to make less connection to database. Using simple update value in cache. You can check on this flowchart
 
-  Tasks: []typgo.Tasker{
-    // tasks ...
-  }
-}
-```
+![redis.png](./docs/redis.png)
 
-## Project Layout
+### Update Cache after Deposit & Withdrawal Wallet
+This process implement queue using kafka. After user doing deposit or withdrawal, system will send kafka message to notifiy there is new transaction from wallet. This process also tackling requirement to not directly update value after user using their balance.
 
-Typical-Rest encourage [standard go project layout](https://github.com/golang-standards/project-layout)
+![kafka.png](./docs/kafka.png)
 
-Source codes:
-- [`internal`](internal): private codes for the project
-  - [`internal/app`](internal/app)
-    - [`internal/app/infra`](internal/app/infra): infrastructure for the project e.g. config and connection object
-    - [`internal/app/controller`](internal/app/controller): presentation layer
-    - [`internal/app/service`](internal/app/service): logic layer
-    - [`internal/app/repo`](internal/app/repo): data-access layer for database repo or domain model
-  - [`internal/generated`](internal/generated): code generated e.g. typical, grpc, xsd, etc.
-- [`pkg`](pkg): shareable codes e.g. helper/utility Library
-- [`cmd`](cmd): the main package
+After current system receiver message from kafka, system will refresh cache to used by get wallet API
 
-Others directory:
-- [`tools`](tools) Supporting tool for the project e.g. Build Tool
-- [`api`](api) Any related scripts for API e.g. api-model script (swagger, raml, etc) or client script
-- [`database`](database) Any related scripts for Databases e.g. migration scripts and seed data
+![kafka-redis.png](./docs/kafka-redis.png)
 
-## Dependency Injection
-
-Typical-Rest encourage [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) using [uber-dig](https://github.com/uber-go/dig) and annotations (`@ctor`).
-
-```go
-// NewConn ...
-// @ctor
-func NewConn() *sql.DB{
-}
-```
-
-Add import side-effect to make it work
-```go
-import (
-  _ "github.com/typical-go/typical-rest-server/internal/generated/ctor"
-)
-```
-
-## Application Config
-
-Typical-Rest encourage [application config with environment variables](https://12factor.net/config) using [envconfig](https://github.com/kelseyhightower/envconfig) and annotation (`@envconfig`).
-
-```go
-type (
-  // AppCfg application configuration
-  // @envconfig (prefix:"APP")
-  AppCfg struct {
-    Address string `envconfig:"ADDRESS" default:":8089" required:"true"`
-    Debug   bool   `envconfig:"DEBUG" default:"true"`
-  }
-)
-```
-
-Generate usage documentation ([USAGE.md](USAGE.md)) and .env file
-```go
-// in typical-build
-
-&typcfg.EnvconfigAnnot{
-  DotEnv:   ".env",     // generate .env file
-  UsageDoc: "USAGE.md", // generate USAGE.md
-}
-```
-
-Add import side-effect to make it work
-```go
-import(
-  _ "github.com/typical-go/typical-rest-server/internal/generated/envcfg"
-)
-```
-
-## Mocking
-
-Typical-Rest encourage [mocking](https://en.wikipedia.org/wiki/Mock_object) using [gomock](https://github.com/golang/mock) and annotation(`@mock`).
-
-```go
-type(
-  // Reader responsible to read
-  // @mock
-  Reader interface{
-    Read() error
-  }
-)
-```
-
-Mock class will be generated in `*_mock` package
-
-## Database Transaction
-
-In `Repository` layer
-```go
-func (r *RepoImpl) Delete(ctx context.Context) (int64, error) {
-  txn, err := dbtxn.Use(ctx, r.DB) // use transaction if begin detected
-  if err != nil {                  // create transaction error
-      return -1, err
-  }
-  db := txn                     // transaction object or database connection
-  // result, err := ...
-  if err != nil {
-      txn.AppendError(err)            // append error to plan for rollback
-      return -1, err
-  }
-  // ...
-}
-```
-
-In `Service` layer
-```go
-func (s *SvcImpl) SomeOperation(ctx context.Context) (err error){
-  // begin the transaction
-  txn := dbtxn.Begin(&ctx)
-
-  // commit/rollback in end function
-  defer func(){ err = txn.Commit() }()
-  // ...
-}
-```
-
-## Server-Side Cache
-
-Use echo middleware to handling cache
-```go
-cacheStore := &cachekit.Store{
-  Client:        redis.NewClient(&redis.Options{Addr: "localhost:6379"}),
-  DefaultMaxAge: 30 * time.Second,
-  PrefixKey:     "cache_",
-}
-
-e := echo.New()
-e.GET("/", handle, cacheStore.Middleware)
-```
-
-## References
-
-Golang:
-- [Go Documentation](https://golang.org/doc/)
-- [Go For Industrial Programming](https://peter.bourgon.org/go-for-industrial-programming/)
-- [Uber Go Style Guide](https://github.com/uber-go/guide)
-- [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
-
-RESTful API:
-- [Best Practices for Designing a Pragmatic RESTful API](https://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api)
-- [Everything You Need to know About API Pagination](https://nordicapis.com/everything-you-need-to-know-about-api-pagination/)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+## Other
+- This code using `JSend` as Rest response format
+- This code implementing `domain design` to separate scope
+- This code contain `in-code comment`, other engineer will be more easy to get understanding of code
+- This code use `postgres DB locking` to prevent race condition
