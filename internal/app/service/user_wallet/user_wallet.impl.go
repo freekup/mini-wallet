@@ -91,3 +91,43 @@ func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string
 
 	return
 }
+
+// DisableWallet used to disable user wallet status
+func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable bool, userXID string) (wallet entity.UserWallet, err error) {
+	if userXID == "" {
+		err = errors.New("user xid is empty")
+		return
+	}
+
+	wallet, err = s.UserWalletRepo.GetUserWalletByUserXID(ctx, true, userXID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+
+	if wallet.ID == "" {
+		err = errors.New("wallet not found")
+		return
+	}
+	if !isDisable {
+		err = errors.New("IsDisable is false")
+		return
+	}
+	if isDisable && !wallet.IsEnabledBool() {
+		err = errors.New("wallet already disabled")
+		return
+	}
+
+	currTime := time.Now().Format(time.RFC3339)
+
+	wallet.IsEnabled = 0
+	wallet.EnabledAt = nil
+	wallet.DeletedBy = &userXID
+	wallet.DeletedAt = &currTime
+
+	err = s.UserWalletRepo.ChangeEnableStatusWallet(ctx, wallet)
+	if err != nil {
+		return
+	}
+
+	return
+}
