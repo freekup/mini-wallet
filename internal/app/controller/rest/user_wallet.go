@@ -28,6 +28,7 @@ func (c *UserWalletController) SetRoute(e echokit.Server) {
 	wallet.PATCH("", c.DisableWallet, middleware.JWTAuth)
 	wallet.GET("", c.ViewMyWallet, middleware.JWTAuth)
 
+	wallet.GET("/transactions", c.GetWalletTransactions, middleware.JWTAuth)
 	wallet.POST("/deposits", c.WalletDeposit, middleware.JWTAuth)
 	wallet.POST("/withdrawals", c.WalletWithdraw, middleware.JWTAuth)
 }

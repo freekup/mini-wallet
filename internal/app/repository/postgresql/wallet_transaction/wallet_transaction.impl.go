@@ -8,6 +8,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/freekup/mini-wallet/internal/app/entity"
 	"github.com/typical-go/typical-rest-server/pkg/dbtxn"
+	"github.com/typical-go/typical-rest-server/pkg/sqkit"
 	"go.uber.org/dig"
 )
 
@@ -21,6 +22,87 @@ type (
 // @ctor
 func NewWalletTransactionRepository(impl WalletTransactionRepositoryImpl) WalletTransactionRepository {
 	return &impl
+}
+
+// GetWalletTransactions used to get all wallet transaction
+func (r *WalletTransactionRepositoryImpl) GetWalletTransactions(ctx context.Context, pagination entity.ViewPagination, opts ...sqkit.SelectOption) (results []entity.WalletTransaction, pag entity.ViewPagination, err error) {
+	// Initialize transaction session from context
+	txn, err := dbtxn.Use(ctx, r.DB)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err != nil && txn != nil {
+			// Will automatic rollback if any error
+			txn.AppendError(err)
+		}
+	}()
+
+	if pagination.Limit <= 0 {
+		pagination.Limit = 20
+	}
+	if pagination.Offset <= 0 {
+		pagination.Offset = 0
+	}
+
+	queryBuilder := sq.Select(
+		"COUNT(*) OVER() AS total",
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.ID),
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.WalletID),
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.ReferenceID),
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.Amount),
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.Description),
+		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.CreatedBy),
+		fmt.Sprintf("TO_CHAR(%s.%s, 'YYYY-MM-DD\"T\"HH:mm:ssTZH')", entity.WalletTransactionTableName, entity.WalletTransactionTable.CreatedAt),
+	).From(entity.WalletTransactionTableName).PlaceholderFormat(sq.Dollar).
+		// Use subquery to improve query process
+		Join(fmt.Sprintf(`
+			(
+				SELECT
+					id,
+					user_xid
+				FROM public.user_wallets
+			) uw ON uw.id = %s.%s
+		`, entity.WalletTransactionTableName, entity.WalletTransactionTable.WalletID))
+
+	for _, opt := range opts {
+		queryBuilder = opt.CompileSelect(queryBuilder)
+	}
+
+	if pagination.Limit > 0 {
+		queryBuilder = queryBuilder.Limit(uint64(pagination.Limit))
+	}
+
+	rows, err := queryBuilder.RunWith(txn).QueryContext(ctx)
+	if err != nil {
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		result := entity.WalletTransaction{}
+		if err = rows.Scan(
+			&pag.Total,
+			&result.ID,
+			&result.WalletID,
+			&result.ReferenceID,
+			&result.Amount,
+			&result.Description,
+			&result.CreatedBy,
+			&result.CreatedAt,
+		); err != nil {
+			return
+		}
+
+		results = append(results, result)
+	}
+
+	pag.Limit = pagination.Limit
+	pag.Offset = pagination.Offset
+
+	return
 }
 
 // CreateWalletTransaction used to create wallet transaction

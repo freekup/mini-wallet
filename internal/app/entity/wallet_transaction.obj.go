@@ -4,7 +4,7 @@ type (
 	WalletTransaction struct {
 		ID          string  `json:"id"`
 		WalletID    string  `json:"wallet_id"`
-		Status      string  `json:"status"`
+		Status      string  `json:"-"`
 		ReferenceID string  `json:"reference_id"`
 		Amount      float64 `json:"amount"`
 		Description string  `json:"description"`

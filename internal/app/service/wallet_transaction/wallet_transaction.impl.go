@@ -12,6 +12,7 @@ import (
 	uwr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user_wallet"
 	wtr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/wallet_transaction"
 	"github.com/typical-go/typical-rest-server/pkg/dbtxn"
+	"github.com/typical-go/typical-rest-server/pkg/sqkit"
 	"go.uber.org/dig"
 )
 
@@ -26,6 +27,33 @@ type (
 // @ctor
 func NewWalletTransactionService(impl WalletTransactionServiceImpl) WalletTransactionService {
 	return &impl
+}
+
+// GetWalletTransactions used to get list of wallet transactions
+func (s *WalletTransactionServiceImpl) GetWalletTransactions(ctx context.Context, pagination entity.ViewPagination, userXID string) (results []entity.WalletTransaction, pg entity.ViewPagination, err error) {
+	if pagination.Limit < 0 {
+		err = errors.New("the limit must not be negative")
+		return
+	} else if pagination.Limit > 20 {
+		err = errors.New("the maximum limit is 20, the limit must be less or equal to 20")
+		return
+	}
+
+	if pagination.Offset < 0 {
+		err = errors.New("the offset must not be negative")
+		return
+	}
+	if userXID == "" {
+		err = errors.New("user XID is empty")
+		return
+	}
+
+	opts := make([]sqkit.SelectOption, 0)
+	if userXID != "" {
+		opts = append(opts, sqkit.Eq{"uw.user_xid": userXID})
+	}
+
+	return s.WalletTransRepo.GetWalletTransactions(ctx, pagination, opts...)
 }
 
 // AddBalanceWallet used to add balance amount
