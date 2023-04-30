@@ -10,7 +10,7 @@ import (
 type (
 	// @mock
 	UserWalletRepository interface {
-		GetUserWallet(ctx context.Context, opts ...sqkit.SelectOption) (wallet entity.UserWallet, err error)
-		GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, err error)
+		GetUserWallet(ctx context.Context, isLock bool, opts ...sqkit.SelectOption) (wallet entity.UserWallet, err error)
+		GetUserWalletByUserXID(ctx context.Context, isLock bool, userXID string) (wallet entity.UserWallet, err error)
 	}
 )

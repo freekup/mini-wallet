@@ -25,7 +25,8 @@ func NewUserWalletRepository(impl UserWalletRepositoryImpl) UserWalletRepository
 }
 
 // GetUserWallet used to get user wallet data with given condition
-func (r UserWalletRepositoryImpl) GetUserWallet(ctx context.Context, opts ...sqkit.SelectOption) (wallet entity.UserWallet, err error) {
+// isLock used to identify is it LOCK query or not
+func (r UserWalletRepositoryImpl) GetUserWallet(ctx context.Context, isLock bool, opts ...sqkit.SelectOption) (wallet entity.UserWallet, err error) {
 	// Initialize transaction session from context
 	txn, err := dbtxn.Use(ctx, r.DB)
 	if err != nil {
@@ -53,6 +54,12 @@ func (r UserWalletRepositoryImpl) GetUserWallet(ctx context.Context, opts ...sqk
 		queryBuilder = opt.CompileSelect(queryBuilder)
 	}
 
+	// This query used to locking data from other connection session
+	// usually used to prevent race condition
+	if isLock {
+		queryBuilder.Suffix("FOR UPDATE")
+	}
+
 	err = queryBuilder.RunWith(txn).QueryRowContext(ctx).Scan(
 		&wallet.ID,
 		&wallet.UserXID,
@@ -70,8 +77,8 @@ func (r UserWalletRepositoryImpl) GetUserWallet(ctx context.Context, opts ...sqk
 }
 
 // GetUserWalletByUserID used to get user wallet with user_id filter
-func (r UserWalletRepositoryImpl) GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, err error) {
-	return r.GetUserWallet(ctx, []sqkit.SelectOption{
+func (r UserWalletRepositoryImpl) GetUserWalletByUserXID(ctx context.Context, isLock bool, userXID string) (wallet entity.UserWallet, err error) {
+	return r.GetUserWallet(ctx, isLock, []sqkit.SelectOption{
 		sqkit.Eq{fmt.Sprintf("%s.%s", entity.UserWalletTableName, entity.UserWalletTable.UserXID): userXID},
 	}...)
 }
