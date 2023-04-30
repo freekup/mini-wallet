@@ -23,6 +23,8 @@ func (c *UserWalletController) SetRoute(e echokit.Server) {
 
 	wallet := e.Group("/wallet")
 	wallet.POST("", c.EnableWallet, middleware.JWTAuth)
+	wallet.PATCH("", c.DisableWallet, middleware.JWTAuth)
+	wallet.GET("", c.ViewMyWallet, middleware.JWTAuth)
 }
 
 // InitializeWallet used to handle InitializeWallet Rest
@@ -60,6 +62,53 @@ func (c *UserWalletController) EnableWallet(ec echo.Context) (err error) {
 	)
 
 	wallet, err := c.UserWalletService.EnableWallet(ctx, xid)
+	if err != nil {
+		return
+	}
+
+	return ec.JSON(200, map[string]interface{}{
+		"id":         wallet.ID,
+		"owned_by":   wallet.UserXID,
+		"status":     wallet.IsEnabledString(),
+		"enabled_at": wallet.EnabledAt,
+		"balance":    wallet.CurrentBalance,
+	})
+}
+
+// DisableWallet used to disable wallet status
+func (c *UserWalletController) DisableWallet(ec echo.Context) (err error) {
+	var (
+		ctx        = ec.Request().Context()
+		xid        = tokenizer.FetchEchoTokenXID(ec)
+		isDisabled = false
+	)
+
+	if ec.FormValue("is_disabled") == "true" {
+		isDisabled = true
+	}
+
+	wallet, err := c.UserWalletService.DisableWallet(ctx, isDisabled, xid)
+	if err != nil {
+		return
+	}
+
+	return ec.JSON(200, map[string]interface{}{
+		"id":          wallet.ID,
+		"owned_by":    wallet.UserXID,
+		"status":      wallet.IsEnabledString(),
+		"disabled_at": wallet.DeletedAt,
+		"balance":     wallet.CurrentBalance,
+	})
+}
+
+// ViewMyWallet used to get wallet from auth
+func (c *UserWalletController) ViewMyWallet(ec echo.Context) (err error) {
+	var (
+		ctx = ec.Request().Context()
+		xid = tokenizer.FetchEchoTokenXID(ec)
+	)
+
+	wallet, err := c.UserWalletService.GetUserWalletByUserXID(ctx, xid)
 	if err != nil {
 		return
 	}
