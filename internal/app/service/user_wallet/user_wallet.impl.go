@@ -131,3 +131,26 @@ func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable boo
 
 	return
 }
+
+// GetUserWalletByUserXID used to get user wallet
+func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, err error) {
+	if userXID == "" {
+		err = errors.New("user xid is empty")
+		return
+	}
+
+	wallet, err = s.UserWalletRepo.GetUserWalletByUserXID(ctx, false, userXID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+	if wallet.ID == "" {
+		err = errors.New("wallet not found")
+		return
+	}
+	if !wallet.IsEnabledBool() {
+		err = errors.New("wallet is disabled")
+		return
+	}
+
+	return
+}
