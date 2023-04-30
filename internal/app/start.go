@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
 
+	"github.com/freekup/mini-wallet/internal/app/controller/rest"
 	"github.com/freekup/mini-wallet/internal/app/infra"
 	"github.com/typical-go/typical-rest-server/pkg/echokit"
 	"go.uber.org/dig"
@@ -51,9 +52,11 @@ func SetMiddleware(e *echo.Echo) {
 // SetRoute set route
 func SetRoute(
 	e *echo.Echo,
+	userWalletCtrl rest.UserWalletController,
 ) {
 
 	// set route
+	echokit.SetRoute(e, &userWalletCtrl)
 
 	// profiling
 	e.GET("/debug/*", echo.WrapHandler(http.DefaultServeMux))
