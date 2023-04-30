@@ -51,21 +51,6 @@ func NewDatabases(cfgs DatabaseCfgs) Databases {
 	}
 }
 
-// func openMySQL(p *DatabaseCfg) *sql.DB {
-// 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?tls=false&parseTime=true",
-// 		p.DBUser, p.DBPass, p.Host, p.Port, p.DBName))
-// 	if err != nil {
-// 		logrus.Fatalf("msyql: %s", err.Error())
-// 	}
-// 	db.SetConnMaxLifetime(p.ConnMaxLifetime)
-// 	db.SetMaxIdleConns(p.MaxIdleConns)
-// 	db.SetMaxOpenConns(p.MaxOpenConns)
-// 	if err = db.Ping(); err != nil {
-// 		logrus.Fatalf("msyql: %s", err.Error())
-// 	}
-// 	return db
-// }
-
 func openPostgres(p *DatabaseCfg) *sql.DB {
 	conn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
