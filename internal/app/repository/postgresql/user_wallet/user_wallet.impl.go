@@ -167,3 +167,31 @@ func (r *UserWalletRepositoryImpl) ChangeEnableStatusWallet(ctx context.Context,
 
 	return
 }
+
+// UpdateWalletCurrentBalance used to change current balance from user wallet
+func (r UserWalletRepositoryImpl) UpdateWalletCurrentBalance(ctx context.Context, wallet entity.UserWallet) (err error) {
+	// Initialize transaction session from context
+	txn, err := dbtxn.Use(ctx, r.DB)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err != nil && txn != nil {
+			// Will automatic rollback if any error
+			txn.AppendError(err)
+		}
+	}()
+
+	builder := sq.Update(entity.UserWalletTableName).
+		Set(entity.UserWalletTable.CurrentBalance, wallet.CurrentBalance).
+		Set(entity.UserWalletTable.ModifiedAt, time.Now().Format(time.RFC3339)).
+		Where(sq.Eq{entity.UserWalletTable.ID: wallet.ID}).PlaceholderFormat(sq.Dollar)
+
+	_, err = builder.RunWith(txn).ExecContext(ctx)
+	if err != nil {
+		return
+	}
+
+	return
+}

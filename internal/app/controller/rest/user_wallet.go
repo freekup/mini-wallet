@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/freekup/mini-wallet/internal/app/middleware"
 	uws "github.com/freekup/mini-wallet/internal/app/service/user_wallet"
+	wts "github.com/freekup/mini-wallet/internal/app/service/wallet_transaction"
 	"github.com/freekup/mini-wallet/pkg/tokenizer"
 	"github.com/labstack/echo/v4"
 	"github.com/typical-go/typical-rest-server/pkg/echokit"
@@ -12,7 +13,8 @@ import (
 type (
 	UserWalletController struct {
 		dig.In
-		UserWalletService uws.UserWalletService
+		UserWalletService  uws.UserWalletService
+		WalletTransService wts.WalletTransactionService
 	}
 )
 
@@ -25,6 +27,9 @@ func (c *UserWalletController) SetRoute(e echokit.Server) {
 	wallet.POST("", c.EnableWallet, middleware.JWTAuth)
 	wallet.PATCH("", c.DisableWallet, middleware.JWTAuth)
 	wallet.GET("", c.ViewMyWallet, middleware.JWTAuth)
+
+	wallet.POST("/deposits", c.WalletDeposit, middleware.JWTAuth)
+	wallet.POST("/withdrawals", c.WalletWithdraw, middleware.JWTAuth)
 }
 
 // InitializeWallet used to handle InitializeWallet Rest

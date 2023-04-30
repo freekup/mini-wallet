@@ -14,5 +14,6 @@ type (
 		GetUserWalletByUserXID(ctx context.Context, isLock bool, userXID string) (wallet entity.UserWallet, err error)
 		CreateUserWallet(ctx context.Context, arg entity.CreateUserWalletArg) (wallet entity.UserWallet, err error)
 		ChangeEnableStatusWallet(ctx context.Context, wallet entity.UserWallet) (err error)
+		UpdateWalletCurrentBalance(ctx context.Context, wallet entity.UserWallet) (err error)
 	}
 )
