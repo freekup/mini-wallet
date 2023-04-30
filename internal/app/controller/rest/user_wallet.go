@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/freekup/mini-wallet/internal/app/middleware"
 	uws "github.com/freekup/mini-wallet/internal/app/service/user_wallet"
 	"github.com/freekup/mini-wallet/pkg/tokenizer"
 	"github.com/labstack/echo/v4"
@@ -19,6 +20,9 @@ var _ echokit.Router = (*UserWalletController)(nil)
 
 func (c *UserWalletController) SetRoute(e echokit.Server) {
 	e.POST("/init", c.InitializeWallet)
+
+	wallet := e.Group("/wallet")
+	wallet.POST("", c.EnableWallet, middleware.JWTAuth)
 }
 
 // InitializeWallet used to handle InitializeWallet Rest
@@ -45,5 +49,26 @@ func (c *UserWalletController) InitializeWallet(ec echo.Context) (err error) {
 
 	return ec.JSON(200, map[string]interface{}{
 		"token": token,
+	})
+}
+
+// EnableWallet used to enable wallet status
+func (c *UserWalletController) EnableWallet(ec echo.Context) (err error) {
+	var (
+		ctx = ec.Request().Context()
+		xid = tokenizer.FetchEchoTokenXID(ec)
+	)
+
+	wallet, err := c.UserWalletService.EnableWallet(ctx, xid)
+	if err != nil {
+		return
+	}
+
+	return ec.JSON(200, map[string]interface{}{
+		"id":         wallet.ID,
+		"owned_by":   wallet.UserXID,
+		"status":     wallet.IsEnabledString(),
+		"enabled_at": wallet.EnabledAt,
+		"balance":    wallet.CurrentBalance,
 	})
 }
