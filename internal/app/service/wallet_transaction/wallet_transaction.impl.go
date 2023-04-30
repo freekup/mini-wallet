@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/freekup/mini-wallet/internal/app/entity"
+	"github.com/freekup/mini-wallet/internal/app/repository/kafka"
 	uwr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user_wallet"
 	wtr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/wallet_transaction"
 	"github.com/freekup/mini-wallet/pkg/cerror"
@@ -21,6 +22,7 @@ type (
 		dig.In
 		WalletTransRepo wtr.WalletTransactionRepository
 		UserWalletRepo  uwr.UserWalletRepository
+		MessageRepo     kafka.MessageRepository
 	}
 )
 
@@ -116,6 +118,15 @@ func (s *WalletTransactionServiceImpl) AddBalanceWallet(ctx context.Context, arg
 		return
 	}
 
+	defer func() {
+		if err == nil {
+			s.MessageRepo.CreatedWalletTransaction(entity.KafkaCreatedWalletTransactionData{
+				UserXID: userWallet.UserXID,
+				Amount:  arg.Amount,
+			})
+		}
+	}()
+
 	// Update user-wallet current balance
 	userWallet.CurrentBalance += arg.Amount
 	err = s.UserWalletRepo.UpdateWalletCurrentBalance(ctx, userWallet)
@@ -187,6 +198,15 @@ func (s *WalletTransactionServiceImpl) WithdrawBalance(ctx context.Context, arg 
 		cerr = cerror.NewValidationError("amount=amount cannot more than current balance")
 		return
 	}
+
+	defer func() {
+		if err == nil {
+			s.MessageRepo.CreatedWalletTransaction(entity.KafkaCreatedWalletTransactionData{
+				UserXID: userWallet.UserXID,
+				Amount:  arg.Amount,
+			})
+		}
+	}()
 
 	// Update user-wallet current balance
 	userWallet.CurrentBalance += arg.Amount

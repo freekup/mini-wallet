@@ -13,5 +13,6 @@ type (
 		EnableWallet(ctx context.Context, userXID string) (wallet entity.UserWallet, cerr cerror.CError)
 		DisableWallet(ctx context.Context, isDisable bool, userXID string) (wallet entity.UserWallet, cerr cerror.CError)
 		GetUserWalletByUserXID(ctx context.Context, userXID string) (wallet entity.UserWallet, cerr cerror.CError)
+		RefreshUserWalletCache(ctx context.Context, userXID string) (err error)
 	}
 )

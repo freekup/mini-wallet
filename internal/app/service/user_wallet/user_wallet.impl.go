@@ -3,12 +3,15 @@ package userwallet
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/freekup/mini-wallet/internal/app/entity"
 	ur "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user"
 	uwr "github.com/freekup/mini-wallet/internal/app/repository/postgresql/user_wallet"
 	"github.com/freekup/mini-wallet/pkg/cerror"
+	"github.com/typical-go/typical-rest-server/pkg/cachekit"
 	"go.uber.org/dig"
 )
 
@@ -17,6 +20,7 @@ type (
 		dig.In
 		UserRepo       ur.UserRepository
 		UserWalletRepo uwr.UserWalletRepository
+		Redis          *cachekit.Store
 	}
 )
 
@@ -159,6 +163,8 @@ func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable boo
 		return
 	}
 
+	s.RemoveWalletCache(ctx, userXID)
+
 	return
 }
 
@@ -179,18 +185,82 @@ func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, user
 		return
 	}
 
-	wallet, err = s.UserWalletRepo.GetUserWalletByUserXID(ctx, false, userXID)
-	if err != nil && err != sql.ErrNoRows {
+	// Fetch from cache
+	cacheWallet, err := s.Redis.HGet(ctx, entity.RedisUserBalanceKey, userXID).Result()
+	if err != nil && err.Error() != entity.ErrRedisNoRows {
 		return
 	}
-	if wallet.ID == "" {
-		cerr = cerror.NewValidationError("wallet=wallet not found")
-		return
+
+	if cacheWallet == "" {
+		wallet, err = s.UserWalletRepo.GetUserWalletByUserXID(ctx, false, userXID)
+		if err != nil && err != sql.ErrNoRows {
+			return
+		}
+		if wallet.ID == "" {
+			cerr = cerror.NewValidationError("wallet=wallet not found")
+			return
+		}
+		if !wallet.IsEnabledBool() {
+			cerr = cerror.NewValidationError("wallet=wallet is disabled")
+			return
+		}
+
+		// Store value to redis cache
+		var bWallet []byte
+		bWallet, err = json.Marshal(wallet)
+		if err != nil {
+			return
+		}
+
+		cacheWallet = string(bWallet)
+		s.Redis.HSet(ctx, entity.RedisUserBalanceKey, map[string]interface{}{
+			userXID: cacheWallet,
+		})
 	}
-	if !wallet.IsEnabledBool() {
-		cerr = cerror.NewValidationError("wallet=wallet is disabled")
+
+	err = json.Unmarshal([]byte(cacheWallet), &wallet)
+	if err != nil {
 		return
 	}
 
 	return
+}
+
+// RefreshUserWalletCache used to refresh user wallet cache
+func (s *UserWalletServiceImpl) RefreshUserWalletCache(ctx context.Context, userXID string) (err error) {
+	if userXID == "" {
+		err = errors.New("user xid is empty")
+		return
+	}
+
+	wallet, err := s.UserWalletRepo.GetUserWalletByUserXID(ctx, false, userXID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+	if wallet.ID == "" {
+		err = errors.New("wallet not found")
+		return
+	}
+	if !wallet.IsEnabledBool() {
+		err = errors.New("wallet is disabled")
+		return
+	}
+
+	var bWallet []byte
+	bWallet, err = json.Marshal(wallet)
+	if err != nil {
+		return
+	}
+
+	cacheWallet := string(bWallet)
+	s.Redis.HSet(ctx, entity.RedisUserBalanceKey, map[string]interface{}{
+		userXID: cacheWallet,
+	})
+
+	return
+}
+
+// RemoveWalletCache used to delete existing cache
+func (s *UserWalletServiceImpl) RemoveWalletCache(ctx context.Context, userXID string) {
+	s.Redis.HDel(ctx, entity.RedisUserBalanceKey, userXID)
 }

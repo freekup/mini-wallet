@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
 
+	kafkaCtrl "github.com/freekup/mini-wallet/internal/app/controller/kafka"
 	"github.com/freekup/mini-wallet/internal/app/controller/rest"
 	"github.com/freekup/mini-wallet/internal/app/infra"
 	"github.com/typical-go/typical-rest-server/pkg/echokit"
@@ -28,6 +29,13 @@ func Start(
 ) (err error) {
 	if err := di.Invoke(SetMiddleware); err != nil {
 		return err
+	}
+	if err = di.Invoke(func(
+		kafkaCtrl kafkaCtrl.KafkaCtrl,
+	) {
+		kafkaCtrl.KafkaRoute()
+	}); err != nil {
+		return
 	}
 	if err := di.Invoke(SetRoute); err != nil {
 		return err
