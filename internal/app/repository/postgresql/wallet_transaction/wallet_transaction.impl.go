@@ -39,13 +39,6 @@ func (r *WalletTransactionRepositoryImpl) GetWalletTransactions(ctx context.Cont
 		}
 	}()
 
-	if pagination.Limit <= 0 {
-		pagination.Limit = 20
-	}
-	if pagination.Offset <= 0 {
-		pagination.Offset = 0
-	}
-
 	queryBuilder := sq.Select(
 		"COUNT(*) OVER() AS total",
 		fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.ID),
@@ -72,6 +65,9 @@ func (r *WalletTransactionRepositoryImpl) GetWalletTransactions(ctx context.Cont
 
 	if pagination.Limit > 0 {
 		queryBuilder = queryBuilder.Limit(uint64(pagination.Limit))
+	}
+	if pagination.Offset > 0 {
+		queryBuilder = queryBuilder.Offset(uint64(pagination.Offset))
 	}
 
 	rows, err := queryBuilder.RunWith(txn).QueryContext(ctx)

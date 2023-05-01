@@ -36,7 +36,7 @@ func (s *UserWalletServiceImpl) InitializeWallet(ctx context.Context, xid string
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -78,7 +78,7 @@ func (s *UserWalletServiceImpl) EnableWallet(ctx context.Context, userXID string
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -123,7 +123,7 @@ func (s *UserWalletServiceImpl) DisableWallet(ctx context.Context, isDisable boo
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -175,7 +175,7 @@ func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, user
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -222,6 +222,8 @@ func (s *UserWalletServiceImpl) GetUserWalletByUserXID(ctx context.Context, user
 	if err != nil {
 		return
 	}
+
+	go s.RefreshUserWalletCache(context.Background(), userXID)
 
 	return
 }

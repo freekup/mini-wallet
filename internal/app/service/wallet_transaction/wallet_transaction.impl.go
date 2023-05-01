@@ -38,7 +38,7 @@ func (s *WalletTransactionServiceImpl) GetWalletTransactions(ctx context.Context
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -94,7 +94,7 @@ func (s *WalletTransactionServiceImpl) AddBalanceWallet(ctx context.Context, arg
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -117,6 +117,11 @@ func (s *WalletTransactionServiceImpl) AddBalanceWallet(ctx context.Context, arg
 			tx.Commit()
 		}
 	}()
+
+	if s.IsReferenceIDExist(ctx, arg.ReferenceID) {
+		cerr = cerror.NewValidationError("reference_id=reference id already processed")
+		return
+	}
 
 	// Use lock query to prevent RACE CONDITION issue
 	userWallet, err := s.UserWalletRepo.GetUserWalletByUserXID(ctx, true, arg.Requestor)
@@ -170,7 +175,7 @@ func (s *WalletTransactionServiceImpl) WithdrawBalance(ctx context.Context, arg 
 	)
 
 	defer func() {
-		if err != nil {
+		if err != nil && cerr == nil {
 			cerr = cerror.NewSystemError(err.Error())
 		}
 	}()
@@ -193,6 +198,11 @@ func (s *WalletTransactionServiceImpl) WithdrawBalance(ctx context.Context, arg 
 			tx.Commit()
 		}
 	}()
+
+	if s.IsReferenceIDExist(ctx, arg.ReferenceID) {
+		cerr = cerror.NewValidationError("reference_id=reference id already processed")
+		return
+	}
 
 	// Use lock query to prevent RACE CONDITION issue
 	userWallet, err := s.UserWalletRepo.GetUserWalletByUserXID(ctx, true, arg.Requestor)
@@ -242,4 +252,16 @@ func (s *WalletTransactionServiceImpl) WithdrawBalance(ctx context.Context, arg 
 	}
 
 	return
+}
+
+func (s *WalletTransactionServiceImpl) IsReferenceIDExist(ctx context.Context, referenceID string) bool {
+	_, pag, _ := s.WalletTransRepo.GetWalletTransactions(ctx, entity.ViewPagination{}, []sqkit.SelectOption{
+		sqkit.Eq{fmt.Sprintf("%s.%s", entity.WalletTransactionTableName, entity.WalletTransactionTable.ReferenceID): referenceID},
+	}...)
+
+	if pag.Total > 0 {
+		return true
+	}
+
+	return false
 }
