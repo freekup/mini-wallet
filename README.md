@@ -8,6 +8,7 @@
 - Redis
 - Kafka
 - JWT
+- Swagger
 
 ## Installation
 
