@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/dgrijalva/jwt-go"
+	goJwt "github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
 
@@ -39,7 +40,7 @@ func FetchEchoTokenXID(c echo.Context) (xid string) {
 		return
 	}
 
-	claims := user.(*jwt.Token).Claims.(jwt.MapClaims)
+	claims := user.(*goJwt.Token).Claims.(goJwt.MapClaims)
 	if val, ok := claims["xid"]; ok {
 		xid = val.(string)
 	}

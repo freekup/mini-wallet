@@ -43,6 +43,20 @@ func (s *WalletTransactionServiceImpl) GetWalletTransactions(ctx context.Context
 		}
 	}()
 
+	// Use lock query to prevent RACE CONDITION issue
+	userWallet, err := s.UserWalletRepo.GetUserWalletByUserXID(ctx, true, userXID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+	if userWallet.ID == "" {
+		cerr = cerror.NewValidationError("user=user wallet not found")
+		return
+	}
+	if !userWallet.IsEnabledBool() {
+		cerr = cerror.NewValidationError("user=user wallet is disabled")
+		return
+	}
+
 	if pagination.Limit < 0 {
 		cerr = cerror.NewValidationError("limit=the limit must not be negative")
 		return

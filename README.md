@@ -23,14 +23,24 @@ go mod tidy
 ```bash
 make migration-up CONNECTION="postgresql://username:password@host:port/db-name"
 ```
-4. Don't forget to change `.env.example` file to be `.env`
+4. Don't forget to change `.env.example` file to be `.env` and **CHANGE ALL VALUE**
 5. After change `.env` value you can generate new DI and Env Config using this command
 ```bash
 ./typicalw g
 ```
-6. To start the program, you can easily run with this command
+6. Don't forget to add this topic to your kafka
+```
+wallet.created-transaction
+```
+
+## Running
+1. To start the program, you can easily run with this command
 ```bash
 ./typicalw r
+```
+2. If you want to access swagger docs, you can open this URL
+```
+http://localhost:8089/swagger/index.html
 ```
 
 ## Overview Process

@@ -1,0 +1,513 @@
+openapi: 3.0.0
+info:
+  title: Mini Wallet
+  version: 1.0.0
+servers:
+  - url: http://localhost:8089/api/v1
+components:
+  securitySchemes:
+    apikeyAuth:
+      type: http
+      scheme: apikey
+security:
+  - apikeyAuth: []
+paths:
+  /init:
+    post:
+      tags:
+        - default
+      summary: Init Wallet
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                customer_xid:
+                  type: string
+                  example: ea0212d3-abd6-406f-8c67-868e814a2436
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7hqlhtiha1u7qqp450
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:00:54 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '202'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  token: >-
+                    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ4aWQiOiJlYTAyMTJkMy1hYmQ2LTQwNmYtOGM2Ny04NjhlODE0YTI0MzYifQ.yzm03yQ7RiVIJerJ0IVbX6oAL0gxDe8rg1kPDZPDgYc
+                status: success
+  /wallet:
+    post:
+      tags:
+        - default
+      summary: Enable Wallet
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7hfu1tihac67uul6l0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 01:38:00 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '270'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet:
+                    balance: 0
+                    enabled_at: '2023-05-01T08:38:00+07:00'
+                    id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                    owned_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                    status: enabled
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i7n1tiha8sq683lg0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:28:44 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '79'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet: wallet already enabled
+                status: fail
+    get:
+      tags:
+        - default
+      summary: View My Wallet
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i7qhtiha8sq683lgg
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:28:58 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '272'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet:
+                    balance: 700000
+                    enabled_at: '2023-05-01T01:05:00+00'
+                    id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                    owned_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                    status: enabled
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i84htiha8sq683li0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:29:38 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '75'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet: wallet is disabled
+                status: fail
+    patch:
+      tags:
+        - default
+      summary: Disable Wallet
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                is_disabled:
+                  type: boolean
+                  example: 'true'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i7t9tiha8sq683lh0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:29:09 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '277'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet:
+                    balance: 700000
+                    disabled_at: '2023-05-01T09:29:09+07:00'
+                    id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                    owned_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                    status: disabled
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i811tiha8sq683lhg
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:29:24 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '80'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  wallet: wallet already disabled
+                status: fail
+  /wallet/deposits:
+    post:
+      tags:
+        - default
+      summary: Wallet Deposit
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: '100000'
+                reference_id:
+                  type: string
+                  example: 50535246-dcb2-4929-8cc9-004ea06f5254
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i8d1tiha8sq683lk0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:30:12 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '336'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  deposit:
+                    amount: 100000
+                    deposit_at: '2023-05-01T02:05:12+00'
+                    deposit_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                    id: 41ce5ed1-b4d0-4a5c-ba97-8f9ef93754de
+                    reference_id: 50535246-dcb2-4929-8cc9-004ea06f5254
+                    status: success
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i879tiha8sq683lig
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:29:49 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '78'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  user: user wallet is disabled
+                status: fail
+  /wallet/withdrawals:
+    post:
+      tags:
+        - default
+      summary: Wallet Withdraw
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: '37000'
+                reference_id:
+                  type: string
+                  example: 50535246-dcb2-4929-8cc9-004ea06f5256
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i90ptiha8a9vbcreg
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:31:31 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '338'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  withdrawal:
+                    amount: 37000
+                    deposit_at: '2023-05-01T02:05:31+00'
+                    deposit_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                    id: c97c9c9e-083b-435e-aae9-24b83afac86f
+                    reference_id: 50535246-dcb2-4929-8cc9-004ea06f5256
+                    status: success
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i97htiha8a9vbcrfg
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:31:58 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '78'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  user: user wallet is disabled
+                status: fail
+  /wallet/transactions:
+    get:
+      tags:
+        - default
+      summary: Get Wallets
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          example: '3'
+        - name: offset
+          in: query
+          schema:
+            type: integer
+          example: '4'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7i9r9tiha8ekd4avt0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:33:17 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '1334'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  pagination:
+                    limit: 3
+                    offset: 4
+                    total: 10
+                  transactions:
+                    - id: 5c233560-e0b4-46f2-9bac-c4e049d7a8bc
+                      wallet_id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                      reference_id: 50535246-dcb2-4929-8cc9-004ea06f5247
+                      amount: 100000
+                      description: Deposit at 2023-05-01T08:38:02+07:00
+                      created_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                      created_at: '2023-05-01T01:05:02+00'
+                    - id: fc5180f2-715a-41ec-8472-fd884eb56bd7
+                      wallet_id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                      reference_id: 50535246-dcb2-4929-8cc9-004ea06f5248
+                      amount: 100000
+                      description: Deposit at 2023-05-01T08:38:22+07:00
+                      created_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                      created_at: '2023-05-01T01:05:22+00'
+                    - id: 9fd614f7-be20-4438-be37-a47f97b462ac
+                      wallet_id: 540f453e-320d-478c-af63-19dc1eb8af4b
+                      reference_id: 50535246-dcb2-4929-8cc9-004ea06f5249
+                      amount: 100000
+                      description: Deposit at 2023-05-01T08:40:37+07:00
+                      created_by: ea0212d3-abd6-406f-8c67-868e814a2436
+                      created_at: '2023-05-01T01:05:37+00'
+                status: success
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=UTF-8
+            X-Request-Id:
+              schema:
+                type: string
+                example: ch7iajptiha869fhb1g0
+            Date:
+              schema:
+                type: string
+                example: Mon, 01 May 2023 02:34:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '78'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  user: user wallet is disabled
+                status: fail

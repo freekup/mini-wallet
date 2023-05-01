@@ -14,6 +14,9 @@ import (
 	"github.com/typical-go/typical-rest-server/pkg/echokit"
 	"go.uber.org/dig"
 
+	_ "github.com/freekup/mini-wallet/docs"
+	echoSwagger "github.com/swaggo/echo-swagger"
+
 	// enable `/debug/vars`
 	_ "expvar"
 
@@ -65,6 +68,9 @@ func SetRoute(
 
 	// set route
 	echokit.SetRoute(e, &userWalletCtrl)
+
+	// swagger
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// profiling
 	e.GET("/debug/*", echo.WrapHandler(http.DefaultServeMux))

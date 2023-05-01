@@ -25,16 +25,17 @@ type (
 var _ echokit.Router = (*UserWalletController)(nil)
 
 func (c *UserWalletController) SetRoute(e echokit.Server) {
-	e.POST("/init", c.InitializeWallet)
+	v1 := e.Group("/api/v1")
+	v1.POST("/init", c.InitializeWallet)
 
-	wallet := e.Group("/wallet")
-	wallet.POST("", c.EnableWallet, middleware.JWTAuth)
-	wallet.PATCH("", c.DisableWallet, middleware.JWTAuth)
-	wallet.GET("", c.ViewMyWallet, middleware.JWTAuth)
+	wallet := v1.Group("/wallet", middleware.JWTAuth)
+	wallet.POST("", c.EnableWallet)
+	wallet.PATCH("", c.DisableWallet)
+	wallet.GET("", c.ViewMyWallet)
 
-	wallet.GET("/transactions", c.GetWalletTransactions, middleware.JWTAuth)
-	wallet.POST("/deposits", c.WalletDeposit, middleware.JWTAuth)
-	wallet.POST("/withdrawals", c.WalletWithdraw, middleware.JWTAuth)
+	wallet.GET("/transactions", c.GetWalletTransactions)
+	wallet.POST("/deposits", c.WalletDeposit)
+	wallet.POST("/withdrawals", c.WalletWithdraw)
 }
 
 // InitializeWallet used to handle InitializeWallet Rest

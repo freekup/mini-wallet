@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"math"
 	"net/http"
 
 	"github.com/freekup/mini-wallet/internal/app/entity"
@@ -62,7 +63,7 @@ func (c *UserWalletController) WalletDeposit(ec echo.Context) (err error) {
 			"deposit_by":   walletTrans.CreatedBy,
 			"status":       walletTrans.Status,
 			"deposit_at":   walletTrans.CreatedAt,
-			"amount":       walletTrans.Amount,
+			"amount":       math.Abs(walletTrans.Amount),
 			"reference_id": walletTrans.ReferenceID,
 		},
 	}))
@@ -98,7 +99,7 @@ func (c *UserWalletController) WalletWithdraw(ec echo.Context) (err error) {
 			"deposit_by":   walletTrans.CreatedBy,
 			"status":       walletTrans.Status,
 			"deposit_at":   walletTrans.CreatedAt,
-			"amount":       walletTrans.Amount,
+			"amount":       math.Abs(walletTrans.Amount),
 			"reference_id": walletTrans.ReferenceID,
 		},
 	}))
